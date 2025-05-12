@@ -1,0 +1,38 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.4.5'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+repositories {
+	mavenLocal()
+	maven { url System.getenv("MAVEN_REPO_URL") }
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'dev.langchain4j:langchain4j-spring-boot-starter:1.0.0-beta4'
+	implementation 'dev.langchain4j:langchain4j-open-ai-spring-boot-starter:1.0.0-beta4'
+	implementation 'dev.langchain4j:langchain4j-ollama:1.0.0-beta4'
+	implementation 'dev.langchain4j:langchain4j-bedrock:1.0.0-beta4'
+	implementation 'org.springframework.boot:spring-boot-starter:3.4.5'
+	implementation 'org.yaml:snakeyaml:2.0'
+	implementation 'org.projectlombok:lombok:1.18.30'
+	implementation 'log4j:log4j:1.2.17'
+	annotationProcessor 'org.projectlombok:lombok:1.18.30'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
