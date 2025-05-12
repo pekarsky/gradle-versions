@@ -1,6 +1,6 @@
-# Project Name
+# gradle-versions
 
-A brief description of your project.
+Playground repo for collecting dependencies versions from gradle projects using LLMs.
 
 ## Features
 
