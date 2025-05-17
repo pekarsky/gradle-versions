@@ -1,4 +1,4 @@
-package com.example.dependency_version_collector.service;
+package com.example.gradle_versions.service;
 
 import dev.langchain4j.model.chat.listener.ChatModelErrorContext;
 import dev.langchain4j.model.chat.listener.ChatModelListener;

@@ -1,4 +1,4 @@
-package com.example.dependency_version_collector.utils;
+package com.example.gradle_versions.utils;
 
 import dev.langchain4j.http.client.jdk.JdkHttpClient;
 import dev.langchain4j.model.bedrock.BedrockChatModel;
@@ -74,8 +74,8 @@ public class LlmFactory {
     }
     private ChatModel initAwsModel() {
         return BedrockChatModel.builder()
-                .modelId("eu.amazon.nova-pro-v1:0")
-//                .modelId("eu.amazon.nova-lite-v1:0")
+//                .modelId("eu.amazon.nova-pro-v1:0")
+                .modelId("eu.amazon.nova-lite-v1:0")
                 .region(Region.EU_WEST_1)
                 .timeout(TIMEOUT)
                 .defaultRequestParameters(

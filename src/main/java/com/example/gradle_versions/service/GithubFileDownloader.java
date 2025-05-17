@@ -1,6 +1,7 @@
-package com.example.dependency_version_collector.service;
+package com.example.gradle_versions.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -12,12 +13,14 @@ import java.net.URL;
 @RequiredArgsConstructor
 public class GithubFileDownloader {
 
-    private final String token = System.getenv("GITHUB_TOKEN");
-    private static final String FILE_PATH_TEMPLATE = System.getenv("GITHUB_PATH_TEMPLATE");
+    @Value("${githubToken}")
+    private String githubToken;
+    @Value("${githubPathTemplate}")
+    private String githubPathTemplate;
 
     public String getFileContent(String repo, String branch, String filePath) throws Exception {
-        String fileUrl = String.format(FILE_PATH_TEMPLATE, repo, branch, filePath);
-        return downloadFileFromGitHub(fileUrl, token);
+        String fileUrl = String.format(githubPathTemplate, repo, branch, filePath);
+        return downloadFileFromGitHub(fileUrl, githubToken);
     }
 
     private String downloadFileFromGitHub(String fileUrl, String token) throws Exception {

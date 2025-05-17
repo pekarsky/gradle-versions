@@ -1,12 +1,11 @@
-package com.example.dependency_version_collector.ai_tools;
+package com.example.gradle_versions.ai_tools;
 
-import com.example.dependency_version_collector.model.AppConfig;
-import com.example.dependency_version_collector.model.AppConfigWrapper;
-import com.example.dependency_version_collector.service.GithubFileDownloader;
+import com.example.gradle_versions.model.AppConfig;
+import com.example.gradle_versions.model.AppConfigWrapper;
+import com.example.gradle_versions.service.GithubFileDownloader;
 import dev.langchain4j.agent.tool.Tool;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;

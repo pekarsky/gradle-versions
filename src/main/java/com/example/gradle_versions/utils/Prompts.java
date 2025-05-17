@@ -1,4 +1,4 @@
-package com.example.dependency_version_collector.utils;
+package com.example.gradle_versions.utils;
 
 
 public class Prompts {
@@ -36,17 +36,14 @@ public class Prompts {
             """;
 
     public static final String DEPENDENCIES_VERSIONS_PROMPT = """
-            You are analyzing build files (`build.gradle`, `gradle.properties`, `libs.versions.toml`, etc.) from Java Gradle project.
-            
-            Your task is to:
-            
-            1. Identify all **Spring-related dependencies** (e.g. `spring-boot`, `spring-cloud`, `spring-cloud-dependencies`).
-            2. Identify following project-specific dependencies: {internal-deps}
+            1. Identify following **Spring Boot** dependencies: `spring-boot`, `spring-cloud`, `spring-cloud-dependencies`.
+            2. Identify following project-specific dependencies: {{internal-deps}}
             3. Extract the **exact version number** used, resolving any property references if needed. **Do not allow** to left placeholders like `${version}` or `${project.version}` or `${dataDomainKafkaProducerVersion}` in the output.
+            4. If dependency is not found in the provided context, just skip it.
             4. identify java version using `sourceCompatibility` and `targetCompatibility` properties (example `17` or `21` or `11`)
             5. Produce a single **HTML summary table** that consolidates all collected dependencies **and java version**
             6. No thinking or explanation should be included into response
-            7. If certain dependency or java version was not found in provided context, just skip it
+            7. Check that you identified all requested dependencies and versions
             
             
             The HTML table should include the following columns:
@@ -88,7 +85,7 @@ public class Prompts {
             Your task is to:
             
             1. Identify all **Spring-related dependencies** (e.g. `spring-boot`, `spring-cloud`, `spring-cloud-dependencies`).
-            2. Identify following project-specific dependencies: {{inner-deps}}
+            2. Identify following project-specific dependencies: {{internal-deps}}
             3. Extract the **exact version number** used, resolving any property references if needed. **Do not allow** to left placeholders like `${version}` or `${project.version}` or `${dataDomainKafkaProducerVersion}` in the output.
             5. Produce a single **HTML summary table** that consolidates all collected dependencies
             6. No thinking or explanation should be included into response

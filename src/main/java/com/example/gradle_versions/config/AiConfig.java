@@ -1,7 +1,7 @@
-package com.example.dependency_version_collector.config;
+package com.example.gradle_versions.config;
 
-import com.example.dependency_version_collector.service.MyChatModelListener;
-import com.example.dependency_version_collector.utils.LlmFactory;
+import com.example.gradle_versions.service.MyChatModelListener;
+import com.example.gradle_versions.utils.LlmFactory;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;

@@ -1,16 +1,16 @@
-package com.example.dependency_version_collector;
+package com.example.gradle_versions;
 
-import com.example.dependency_version_collector.ai_tools.ApplicationConfigTool;
-import com.example.dependency_version_collector.ai_tools.DependencyVersionCollectionTool;
-import com.example.dependency_version_collector.ai_tools.GradleConfigTool;
-import com.example.dependency_version_collector.aiservice.Assistant;
+import com.example.gradle_versions.ai_tools.ApplicationConfigTool;
+import com.example.gradle_versions.ai_tools.DependencyVersionCollectionTool;
+import com.example.gradle_versions.ai_tools.GradleConfigTool;
+import com.example.gradle_versions.aiservice.Assistant;
 
 
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.CommandLineRunner;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -19,8 +19,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static com.example.dependency_version_collector.utils.Prompts.DEPENDENCIES_SUMMARY;
-import static com.example.dependency_version_collector.utils.Prompts.DEPENDENCIES_VERSIONS_PROMPT;
+import static com.example.gradle_versions.utils.Prompts.DEPENDENCIES_SUMMARY;
+import static com.example.gradle_versions.utils.Prompts.DEPENDENCIES_VERSIONS_PROMPT;
 
 
 @Component
@@ -34,7 +34,8 @@ public class Runner
     private final DependencyVersionCollectionTool dependencyVersionCollectionTool;
     private final ApplicationConfigTool applicationConfigTool;
     private final GradleConfigTool gradleConfigTool;
-    private final String innerDeps = System.getenv("INNER_DEPS");
+    @Value("${internalDeps}")
+    private String internalDeps;
 
 //    @Override
     public void run(String... args) throws Exception {
@@ -70,12 +71,13 @@ public class Runner
             try {
                 String projectDependenciesSummary = assistant.chat(DEPENDENCIES_VERSIONS_PROMPT
                         .replace("{context}", gradleConfig)
-                        .replace("{internal-deps}", innerDeps)
+                        .replace("{internal-deps}", internalDeps)
                 );
                 projectDependenciesSummary = extractTableContent(projectDependenciesSummary);
                 if (projectDependenciesSummary == null) {
                     log.error("No dependencies found for project: " + project);
-                    projectDependenciesSummary = extractTableContent(assistant.chat(DEPENDENCIES_VERSIONS_PROMPT.replace("{context}", gradleConfig).replace("{internal-deps}", innerDeps)));
+                    projectDependenciesSummary = extractTableContent(assistant.chat(DEPENDENCIES_VERSIONS_PROMPT.replace("{context}", gradleConfig).replace("{internal-deps}",
+                            internalDeps)));
                 }
                 if (projectDependenciesSummary != null) {
                     log.info("Dependencies found for project: " + project);

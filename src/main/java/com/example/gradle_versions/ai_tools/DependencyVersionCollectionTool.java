@@ -1,4 +1,4 @@
-package com.example.dependency_version_collector.ai_tools;
+package com.example.gradle_versions.ai_tools;
 
 import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.model.chat.ChatModel;
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
-import static com.example.dependency_version_collector.utils.Prompts.DEPENDENCIES_VERSIONS_PROMPT;
+import static com.example.gradle_versions.utils.Prompts.DEPENDENCIES_VERSIONS_PROMPT;
 
 @Component
 @RequiredArgsConstructor

@@ -1,4 +1,4 @@
-package com.example.dependency_version_collector;
+package com.example.gradle_versions;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

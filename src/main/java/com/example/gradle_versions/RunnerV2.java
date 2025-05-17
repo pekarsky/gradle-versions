@@ -1,27 +1,27 @@
-package com.example.dependency_version_collector;
+package com.example.gradle_versions;
 
-import com.example.dependency_version_collector.ai_tools.ApplicationConfigTool;
-import com.example.dependency_version_collector.ai_tools.DependencyVersionCollectionTool;
-import com.example.dependency_version_collector.ai_tools.GradleConfigTool;
-import com.example.dependency_version_collector.aiservice.Assistant;
-import com.example.dependency_version_collector.service.GithubFileDownloader;
-import com.example.dependency_version_collector.utils.LlmFactory;
+import com.example.gradle_versions.ai_tools.ApplicationConfigTool;
+import com.example.gradle_versions.ai_tools.DependencyVersionCollectionTool;
+import com.example.gradle_versions.ai_tools.GradleConfigTool;
+import com.example.gradle_versions.aiservice.Assistant;
+import com.example.gradle_versions.service.GithubFileDownloader;
+import com.example.gradle_versions.utils.FileUtils;
+import com.example.gradle_versions.utils.LlmFactory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import software.amazon.awssdk.services.bedrock.endpoints.internal.Value;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static com.example.dependency_version_collector.utils.Prompts.DEPENDENCIES_SUMMARY;
-import static com.example.dependency_version_collector.utils.Prompts.DEPENDENCIES_VERSIONS_PROMPT;
+import static com.example.gradle_versions.utils.Prompts.DEPENDENCIES_SUMMARY;
+import static com.example.gradle_versions.utils.Prompts.DEPENDENCIES_VERSIONS_PROMPT;
 
 
 @Component
@@ -34,7 +34,11 @@ public class RunnerV2 implements CommandLineRunner {
     private final ApplicationConfigTool applicationConfigTool;
     private final GradleConfigTool gradleConfigTool;
     private final GithubFileDownloader githubFileDownloader;
-    private final String innerDeps = System.getenv("INNER_DEPS");
+    private final FileUtils fileUtils;
+    @Value("${internalDeps}")
+    private String internalDeps;
+    @Value("${projectsRootDir}")
+    private String projectsRootDir;
 
     @Override
     public void run(String... args) throws Exception {
@@ -44,7 +48,7 @@ public class RunnerV2 implements CommandLineRunner {
             return;
         }
 
-        String reports = "";
+        StringBuilder reports = new StringBuilder();
 
         Assistant dockerAssistant = AiServices.builder(Assistant.class)
                 .chatModel(llmFactory.get(LlmFactory.ModelType.DOCKER))
@@ -65,57 +69,79 @@ public class RunnerV2 implements CommandLineRunner {
 
         List<String> projects = applicationConfigTool.applicationsByOwnerSquad(args[0]);
         for(String project : projects) {
-            if(project.equalsIgnoreCase("post-processor")) {
-                continue; //this project has separate gradle.properties file, need to review
-            }
-            Path path = Paths.get(project + ".html");
+            updateGit(project);
+//            if(project.equalsIgnoreCase("post-processor")) {
+//                continue; //this project has separate gradle.properties file, need to review
+//            }
+
             // Check if the file already exists
-            if (Files.exists(path)) {
+            String projectDependenciesSummary = fileUtils.loadProjectReport(project);
+            if (projectDependenciesSummary != null) {
                 log.info("File already exists for project: " + project + ", skipping.");
-                reports += "\n\n\n**PROJECT: " + project + " **\n" + Files.readString(path);
+                reports.append("\n\n\n**PROJECT: ")
+                        .append(project)
+                        .append(" **\n")
+                        .append(projectDependenciesSummary);
                 continue; // Skip to the next iteration
             }
 
             //TODO: files should be taken from separate directory, updating by git pull
-            String gradleConfig = gradleConfigTool.getGradleConfig(project);
-            log.info("Summarizing deps for project: " + project);
+            String gradleConfig = gradleConfigTool.getGradleConfigFromLocal(project);
+//            String gradleConfig = gradleConfigTool.getGradleConfig(project);
+            log.info("Summarizing deps for project: {}", project);
             try {
-                String projectDependenciesSummary = dockerAssistant.chat(
-                        DEPENDENCIES_VERSIONS_PROMPT.replace("{context}", gradleConfig).replace("{internal-deps}", innerDeps));
+                projectDependenciesSummary = dockerAssistant.chat(DEPENDENCIES_VERSIONS_PROMPT
+                        .replace("{context}", gradleConfig)
+                        .replace("{internal-deps}", internalDeps));
                 String projectDependenciesSummaryTable = extractTableContent(projectDependenciesSummary);
                 if (projectDependenciesSummaryTable == null) {
-                    log.error("No dependencies found for project: " + project);
+                    log.error("No dependencies found for project: {}", project);
 
                     projectDependenciesSummary = awsAssistant.chat(DEPENDENCIES_VERSIONS_PROMPT.replace("{context}", gradleConfig));
                     projectDependenciesSummaryTable = extractTableContent(projectDependenciesSummary);
                 }
                 if (projectDependenciesSummaryTable != null) {
-                    log.info("Dependencies found for project: " + project);
+                    log.info("Dependencies found for project: {}", project);
 
                     // Save the content to a file
-                    try {
-                        Files.write(path, projectDependenciesSummaryTable.getBytes());
-                        log.info("Saved dependencies summary to file: " + path);
-                    } catch (IOException e) {
-                        log.error("Error saving dependencies summary to file: " + path, e);
-                    }
-
-                    reports += "\n\n\n**PROJECT: " + project + " **\n" + projectDependenciesSummaryTable;
+                    fileUtils.saveProjectReport(project, projectDependenciesSummaryTable);
+                    reports.append("\n\n\n**PROJECT: ").append(project).append(" **\n").append(projectDependenciesSummaryTable);
                 } else {
-                    log.error("No dependencies found for project: " + project + " after 2 runs, skipping");
+                    log.error("No dependencies found for project: {} after 2 runs, skipping", project);
                 }
             } catch (Exception e) {
-                log.error("Error processing project: " + project, e);
+                log.error("Error processing project: {}", project, e);
             }
         }
         log.info("Generating final report!!");
 //        String finalReport = awsAssistant.chat(DEPENDENCIES_SUMMARY.replace("{data}", reports));
-        String prompt = DEPENDENCIES_SUMMARY.replace("{data}", reports);
+        String prompt = DEPENDENCIES_SUMMARY.replace("{data}", reports.toString());
         saveFile("prompt", prompt);
         String finalReport = awsAssistant.chat(prompt);
 //        System.out.println(finalReport);
         saveFile("final_report.html", finalReport);
         System.exit(0);
+    }
+
+    private void updateGit(String projectName) {
+
+        if(fileUtils.reportPathExists()) {
+            log.info("Report path exists, Git repos should be already updated today");
+            return;
+        }
+
+        String projectPath = projectsRootDir + "/" + projectName;
+        try {
+            Process process = Runtime.getRuntime().exec(new String[] {"git", "-C", projectPath, "pull"});
+            log.info("Executing git pull for project: {}", projectName);
+            if (process.waitFor() == 0) {
+                log.info("Git pull successful for project: {}", projectName);
+            } else {
+                log.error("Git pull failed for project: {}", projectName);
+            }
+        } catch (IOException | InterruptedException e) {
+            log.error("Error executing git pull for project: {}", projectName, e);
+        }
     }
 
     public static String extractTableContent(String response) {
@@ -131,7 +157,7 @@ public class RunnerV2 implements CommandLineRunner {
         try {
             Files.writeString(Paths.get(filename), content);
         } catch (IOException e) {
-            log.error("Error saving file: " + filename, e);
+            log.error("Error saving file: {}", filename, e);
         }
     }
 }

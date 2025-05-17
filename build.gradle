@@ -15,7 +15,8 @@ java {
 
 repositories {
 	mavenLocal()
-	maven { url System.getenv("MAVEN_REPO_URL") }
+//	maven { url System.getenv("MAVEN_REPO_URL") }
+	maven { url "https://nexus-proxy.almuk.santanderuk.corp/repository/maven-public" }
 }
 
 dependencies {
